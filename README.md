@@ -1,67 +1,70 @@
-# 3xample Connectivity Analyzer
+# Getting Started with Create React App
 
-An **intelligent internet connectivity analyzer** powered by **Machine Learning**.  
-Unlike traditional speed tests that only give raw numbers, **3xample** provides:  
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-- 📊 Real-time speed, latency, jitter, and packet loss measurements  
-- 🤖 ML-based predictions of connection quality (*Excellent / Good / Poor*)  
-- 💡 Actionable recommendations to improve your internet performance  
+## Available Scripts
 
-Hosted at **[3xample.ca](https://3xample.ca)** (coming soon).  
+In the project directory, you can run:
 
----
+### `npm start`
 
-## 🚀 Features
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-- **Speed Test Core**
-  - Download / Upload speeds
-  - Latency (ping)
-  - Jitter & packet loss
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
-- **Machine Learning Intelligence**
-  - Predicts connection quality from test data
-  - Detects anomalies & instability
-  - Explains likely root causes (Wi-Fi, ISP congestion, device issues)
+### `npm test`
 
-- **Smart Recommendations**
-  - Practical suggestions like *“Try switching to 5GHz Wi-Fi”* or *“Your ISP may be throttling upload speeds.”*
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-- **Clean Dashboard**
-  - Modern React frontend
-  - Historical results & trends (Phase 3)
+### `npm run build`
 
----
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-## 🛠️ Tech Stack
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-- **Frontend:** React + Tailwind + Recharts  
-- **Backend:** FastAPI (Python)  
-- **ML Models:** Scikit-learn (Random Forest / XGBoost)  
-- **Database:** Oracle Autonomous DB (Always Free)  
-- **Cloud Hosting:** Oracle Cloud Infrastructure (OCI Free Tier)  
-- **Domain:** [3xample.ca](https://3xample.ca)  
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
----
+### `npm run eject`
 
-## 📅 Roadmap
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-### Phase 1 – MVP (Baseline Speed Test) ✅
-- [ ] Setup FastAPI backend with `/test` endpoint (speedtest-cli)  
-- [ ] Simple React frontend to display results  
-- [ ] Deploy on OCI Free VM  
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-### Phase 2 – Machine Learning 🔬
-- [ ] Collect data (download, upload, ping, jitter, packet loss)  
-- [ ] Train ML model to classify connection quality  
-- [ ] Add `/analyze` endpoint returning quality + recommendations  
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-### Phase 3 – Production & Portfolio Polish 🌐
-- [ ] User dashboard with history & trends  
-- [ ] Authentication (Google / email login)  
-- [ ] Docker deployment + HTTPS  
-- [ ] Blog section: “3 Examples of How ML Improves Connectivity Tests”  
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
----
+## Learn More
 
-## 📂 Project Structure (planned)
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
+To learn React, check out the [React documentation](https://reactjs.org/).
+
+### Code Splitting
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+
+### Analyzing the Bundle Size
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+
+### Making a Progressive Web App
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+
+### Advanced Configuration
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+
+### Deployment
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+
+### `npm run build` fails to minify
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
