@@ -2,9 +2,11 @@ import asyncio
 import httpx
 import json
 import csv
+import os
 from datetime import datetime
 
-BASE_URL = "http://127.0.0.1:8000"
+# Use environment variable if set, else default to localhost
+BASE_URL = os.getenv("CONNECTIVITY_API_URL", "http://127.0.0.1:8000")
 CSV_FILE = "connectivity_test_results.csv"
 MAX_OUTPUT_LEN = 200  # truncate long outputs
 
@@ -73,7 +75,7 @@ async def test_speedtest(client):
 
 async def test_predict(client):
     target = "features"
-    data = {"features": [5.1, 3.5, 1.4]}  # 3 features for your RF model
+    data = {"features": [5.1, 3.5, 1.4]}  # exactly 3 features
     try:
         r = await client.post(f"{BASE_URL}/predict", json=data)
         result = r.json()
@@ -112,7 +114,7 @@ async def main():
             test_speedtest(client),
             test_predict(client),
             test_history(client),
-            test_traceroute(client),  # traceroute last, can retry
+            test_traceroute(client),
         )
 
 if __name__ == "__main__":

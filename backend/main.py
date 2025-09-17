@@ -1,65 +1,70 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.openapi.utils import get_openapi
-import os
-import pickle
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import List, Optional
+import asyncio
 
-# Use environment variable for base URL
-CONNECTIVITY_API_URL = os.environ.get("CONNECTIVITY_API_URL", "http://127.0.0.1:8000")
+app = FastAPI(title="Connectivity Analyzer API", version="1.0")
 
-app = FastAPI(title="3xample Connectivity Analyzer API", version="1.0")
+# ---------------- Pydantic Models ---------------- #
+class PredictRequest(BaseModel):
+    features: List[float] = Field(..., min_items=3, max_items=3)  # exactly 3 features
 
-# Allow CORS for frontend usage (if using GitHub Pages or any frontend)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # You can restrict to your domain later
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class PredictResponse(BaseModel):
+    prediction: List[str]
 
-# Load ML model
-MODEL_PATH = "rf_model.pkl"
-try:
-    with open(MODEL_PATH, "rb") as f:
-        rf_model = pickle.load(f)
-    print("ML model loaded successfully.")
-except Exception as e:
-    rf_model = None
-    print(f"Failed to load ML model: {e}")
+class PingRequest(BaseModel):
+    host: str
 
-# ----------------- Example Endpoints ----------------- #
+class PingResponse(BaseModel):
+    host: str
+    output: str
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to 3xample Connectivity Analyzer API!"}
+class DNSRequest(BaseModel):
+    domain: str
 
-@app.post("/predict")
-def predict(data: dict):
-    try:
-        features = data.get("features")
-        if not features or len(features) != 3:
-            return JSONResponse(status_code=400, content={"error": "Expected 3 features for prediction"})
-        pred = rf_model.predict([features])
-        return {"prediction": pred.tolist()}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+class DNSResponse(BaseModel):
+    domain: str
+    ip: str
 
-# You can add /ping, /dns, /traceroute, /speedtest endpoints here if needed
-# For Render deployment, make sure you handle timeouts and async properly
+class TracerouteRequest(BaseModel):
+    host: str
 
-# ----------------- Custom OpenAPI ----------------- #
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi(
-        title="3xample Connectivity Analyzer API",
-        version="1.0",
-        description=f"API endpoints for connectivity analysis. Deployed at `{CONNECTIVITY_API_URL}`",
-        routes=app.routes,
-    )
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+class TracerouteResponse(BaseModel):
+    host: str
+    output: str
 
-app.openapi = custom_openapi
+class SpeedtestResponse(BaseModel):
+    ping_ms: float
+    download_mbps: float
+    upload_mbps: float
+
+# ---------------- Endpoints ---------------- #
+@app.post("/predict", response_model=PredictResponse)
+async def predict(data: PredictRequest):
+    # Your ML prediction logic here
+    return {"prediction": ["Poor"]}
+
+@app.post("/ping", response_model=PingResponse)
+async def ping(data: PingRequest):
+    # Your async ping logic
+    return {"host": data.host, "output": "Sample ping output"}
+
+@app.post("/dns", response_model=DNSResponse)
+async def dns(data: DNSRequest):
+    # Your async DNS lookup logic
+    return {"domain": data.domain, "ip": "142.250.217.78"}
+
+@app.post("/traceroute", response_model=TracerouteResponse)
+async def traceroute(data: TracerouteRequest):
+    # Your async traceroute logic
+    return {"host": data.host, "output": "Sample traceroute output"}
+
+@app.get("/speedtest", response_model=SpeedtestResponse)
+async def speedtest():
+    # Your async speedtest logic
+    return {"ping_ms": 8.2, "download_mbps": 600, "upload_mbps": 620}
+
+@app.get("/history")
+async def history(limit: Optional[int] = 5):
+    # Return recent history
+    return {"history": []}
