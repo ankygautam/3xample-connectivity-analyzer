@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3xample Connectivity Analyzer</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { padding: 8px; margin: 5px 0; }
+    pre { background: #f4f4f4; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>3xample Connectivity Analyzer</h1>
+
+  <h2>Ping</h2>
+  <input type="text" id="ping-host" placeholder="Enter host (e.g., google.com)">
+  <button onclick="runPing()">Ping</button>
+  <pre id="ping-result"></pre>
+
+  <h2>DNS Lookup</h2>
+  <input type="text" id="dns-domain" placeholder="Enter domain">
+  <button onclick="runDNS()">Lookup</button>
+  <pre id="dns-result"></pre>
+
+  <h2>Predict</h2>
+  <input type="text" id="features" placeholder="Comma-separated features (3)">
+  <button onclick="runPredict()">Predict</button>
+  <pre id="predict-result"></pre>
+
+  <script>
+    const BASE_URL = "http://127.0.0.1:8000";
+
+    async function runPing() {
+      const host = document.getElementById("ping-host").value;
+      const res = await fetch(`${BASE_URL}/ping`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({host})
+      });
+      const data = await res.json();
+      document.getElementById("ping-result").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function runDNS() {
+      const domain = document.getElementById("dns-domain").value;
+      const res = await fetch(`${BASE_URL}/dns`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({domain})
+      });
+      const data = await res.json();
+      document.getElementById("dns-result").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function runPredict() {
+      const features = document.getElementById("features").value.split(",").map(Number);
+      if (features.length !== 3) {
+        alert("Please enter exactly 3 features.");
+        return;
+      }
+      const res = await fetch(`${BASE_URL}/predict`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({features})
+      });
+      const data = await res.json();
+      document.getElementById("predict-result").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
