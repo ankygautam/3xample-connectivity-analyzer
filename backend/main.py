@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import asyncio
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="Connectivity Analyzer API", version="1.0")
 
@@ -48,6 +49,12 @@ async def predict(data: PredictRequest):
 async def root():
     return {"message": "Welcome to the Connectivity Analyzer API!"}
 
+@app.get("/", include_in_schema=False)
+async def root():
+    """
+    Redirect root URL to Swagger UI
+    """
+    return RedirectResponse(url="/docs")
 
 @app.post("/ping", response_model=PingResponse)
 async def ping(data: PingRequest):
