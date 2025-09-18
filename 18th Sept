@@ -1,3 +1,4 @@
+visual step diagram of your 3xample Connectivity Analyzer workflow
 Local Development
  ├─ Activate venv
  │    source venv/bin/activate
@@ -31,5 +32,54 @@ Domain Setup (Optional)
  ├─ Always test locally before pushing
  ├─ Keep rf_model.pkl inside backend/
  └─ Async endpoints: ping, traceroute, dns, speedtest
+
+graphical diagram
+
+Local Development
+       │
+       ▼
+  Activate venv
+       │
+       ▼
+  Test ML model
+       │
+       ▼
+ Test FastAPI endpoints
+       │
+       ▼
+ Ensure async endpoints work
+ (/ping, /traceroute, /dns, /speedtest)
+       │
+       ▼
+Git / Version Control
+ ┌─────────────┐
+ │ git add .   │
+ │ git commit  │
+ │ git push    │
+ └─────────────┘
+       │
+       ▼
+Render Deployment
+ ┌───────────────────────────────────────────┐
+ │ Procfile: uvicorn backend.main:app ...   │
+ │ requirements.txt includes scikit-learn   │
+ │ Render builds venv + installs packages   │
+ │ Verify ML load + API endpoints           │
+ └───────────────────────────────────────────┘
+       │
+       ▼
+Domain Setup (Optional)
+ ┌─────────────────────────────┐
+ │ Point domain to Render      │
+ │ Ensure HTTPS works          │
+ │ Access Swagger UI /docs     │
+ └─────────────────────────────┘
+       │
+       ▼
+        ✅ Tips
+  - Test locally before pushing
+  - Keep rf_model.pkl inside backend/
+  - Ensure async endpoints work
+
 
 
