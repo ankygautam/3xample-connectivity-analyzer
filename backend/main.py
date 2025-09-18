@@ -3,7 +3,9 @@ from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from typing import List, Optional
 import asyncio
+from fastapi.responses import RedirectResponse
 
+app = FastAPI()
 app = FastAPI(
     title="3xample Connectivity Analyzer",
     description="Async API to test network connectivity: ping, DNS, traceroute, and speedtest",
@@ -58,9 +60,11 @@ async def run_speedtest() -> dict:
 # API Endpoints
 # =======================
 
-@app.get("/", include_in_schema=False)
-async def root():
-    return {"message": "Redirect to /docs for API documentation"}
+
+
+@app.get("/")
+async def redirect_to_docs():
+    return RedirectResponse(url="/docs")
 
 @app.get("/ping", response_model=PingResult, summary="Ping a host", description="Returns ping result for a given host")
 async def ping(host: str = Query(..., description="Hostname or IP to ping")):
