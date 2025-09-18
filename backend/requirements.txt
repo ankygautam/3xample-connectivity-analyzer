@@ -2,3 +2,8 @@ fastapi
 uvicorn[standard]
 aiohttp
 speedtest-cli
+scikit-learn
+pandas
+numpy
+joblib      
+python-multipart
