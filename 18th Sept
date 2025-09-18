@@ -1,0 +1,35 @@
+Local Development
+ ├─ Activate venv
+ │    source venv/bin/activate
+ ├─ Test ML model
+ │    python
+ │    >>> import pickle
+ │    >>> with open("backend/rf_model.pkl", "rb") as f: model = pickle.load(f)
+ ├─ Test FastAPI endpoints
+ │    uvicorn backend.main:app --reload
+ │    Open http://127.0.0.1:8000/docs
+ └─ Ensure async endpoints work (/ping, /traceroute, /dns, /speedtest)
+
+Git / Version Control
+ ├─ git add .
+ ├─ git commit -m "Update backend / fix structure / add FastAPI main.py"
+ └─ git push origin main
+
+Render Deployment
+ ├─ Procfile at project root
+ │    web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+ ├─ requirements.txt includes scikit-learn + all dependencies
+ ├─ Render builds virtualenv, installs packages
+ └─ API runs; check logs for ML load & endpoints
+
+Domain Setup (Optional)
+ ├─ Point 3xample.ca DNS to Render service
+ ├─ Ensure HTTPS works
+ └─ Swagger UI accessible via https://3xample.ca/docs
+
+✅ Tips
+ ├─ Always test locally before pushing
+ ├─ Keep rf_model.pkl inside backend/
+ └─ Async endpoints: ping, traceroute, dns, speedtest
+
+
