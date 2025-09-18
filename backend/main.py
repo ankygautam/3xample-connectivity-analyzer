@@ -44,6 +44,11 @@ async def predict(data: PredictRequest):
     # Your ML prediction logic here
     return {"prediction": ["Poor"]}
 
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Connectivity Analyzer API!"}
+
+
 @app.post("/ping", response_model=PingResponse)
 async def ping(data: PingRequest):
     # Your async ping logic
