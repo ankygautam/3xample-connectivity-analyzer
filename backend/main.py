@@ -45,9 +45,7 @@ async def predict(data: PredictRequest):
     # Your ML prediction logic here
     return {"prediction": ["Poor"]}
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Connectivity Analyzer API!"}
+
 
 @app.get("/", include_in_schema=False)
 async def root():
