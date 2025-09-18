@@ -1,4 +1,5 @@
 # backend/main.py
+from fastapi.responses import RedirectResponse
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -61,6 +62,10 @@ def log_result(type_: str, target: str, output: str):
 # ----------- Endpoints ----------- #
 
 # ML Prediction
+@app.get("/")
+async def redirect_root():
+    return RedirectResponse(url="/docs")
+
 @app.post("/predict")
 def predict(req: PredictRequest):
     if model is None:
