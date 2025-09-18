@@ -1,115 +1,72 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, conlist
-from typing import List, Optional
-import asyncio
+# backend/main.py
+
+from fastapi import FastAPI
+from pydantic import BaseModel
 import subprocess
 import socket
-import json
 import speedtest
-import datetime
-import pickle
 
-# ---------------- App ---------------- #
-app = FastAPI(title="Connectivity Analyzer API", version="1.0")
+app = FastAPI(title="Connectivity Analyzer API")
 
-# ---------------- Pydantic Models ---------------- #
-class PredictRequest(BaseModel):
-    features: conlist(float, min_items=3, max_items=3)  # exactly 3 features
-
-class PredictResponse(BaseModel):
-    prediction: List[str]
-
+# ----------- Request Models ----------- #
 class PingRequest(BaseModel):
     host: str
-
-class PingResponse(BaseModel):
-    host: str
-    output: str
 
 class DNSRequest(BaseModel):
     domain: str
 
-class DNSResponse(BaseModel):
-    domain: str
-    ip: str
 
-class TracerouteRequest(BaseModel):
-    host: str
+# ----------- Endpoints ----------- #
 
-class TracerouteResponse(BaseModel):
-    host: str
-    output: str
-
-class SpeedtestResponse(BaseModel):
-    ping_ms: float
-    download_mbps: float
-    upload_mbps: float
-
-# ---------------- Load ML Model ---------------- #
-try:
-    with open("rf_model.pkl", "rb") as f:
-        model = pickle.load(f)
-    print("ML model loaded successfully.")
-except Exception as e:
-    model = None
-    print("Failed to load ML model:", e)
-
-# ---------------- Utility Functions ---------------- #
-async def run_cmd(cmd: List[str]) -> str:
-    """Run shell command asynchronously and return output"""
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-    stdout, stderr = await proc.communicate()
-    if stderr:
-        return stderr.decode()
-    return stdout.decode()
-
-# ---------------- Endpoints ---------------- #
-@app.post("/predict", response_model=PredictResponse)
-async def predict(data: PredictRequest):
-    if not model:
-        raise HTTPException(status_code=500, detail="ML model not loaded")
-    prediction = model.predict([data.features])
-    return {"prediction": prediction.tolist()}
-
-@app.post("/ping", response_model=PingResponse)
-async def ping(data: PingRequest):
+# Ping a host
+@app.post("/ping")
+def ping_host(req: PingRequest):
     try:
-        output = await run_cmd(["ping", "-c", "4", data.host])
-    except Exception as e:
-        output = str(e)
-    return {"host": data.host, "output": output}
+        result = subprocess.run(
+            ["ping", "-c", "4", req.host],  # "-c 4" = send 4 packets (Linux/Mac)
+            capture_output=True, text=True, check=True
+        )
+        return {"host": req.host, "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        return {"error": str(e), "details": e.stderr}
 
-@app.post("/dns", response_model=DNSResponse)
-async def dns(data: DNSRequest):
+
+# Traceroute
+@app.post("/traceroute")
+def traceroute(req: PingRequest):
     try:
-        ip = socket.gethostbyname(data.domain)
-    except Exception as e:
-        ip = f"Error: {e}"
-    return {"domain": data.domain, "ip": ip}
+        result = subprocess.run(
+            ["traceroute", req.host],
+            capture_output=True, text=True, check=True
+        )
+        return {"host": req.host, "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        return {"error": str(e), "details": e.stderr}
 
-@app.post("/traceroute", response_model=TracerouteResponse)
-async def traceroute(data: TracerouteRequest):
+
+# DNS Lookup
+@app.post("/dns")
+def dns_lookup(req: DNSRequest):
     try:
-        output = await run_cmd(["traceroute", data.host])
-    except Exception as e:
-        output = str(e)
-    return {"host": data.host, "output": output}
+        ip = socket.gethostbyname(req.domain)
+        return {"domain": req.domain, "ip": ip}
+    except socket.gaierror:
+        return {"error": f"Unable to resolve {req.domain}"}
 
-@app.get("/speedtest", response_model=SpeedtestResponse)
-async def speedtest_endpoint():
+
+# Speedtest
+@app.get("/speedtest")
+def run_speedtest():
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
-        download = st.download() / 1e6  # Mbps
-        upload = st.upload() / 1e6      # Mbps
-        ping_ms = st.results.ping
+        download = st.download() / 1_000_000  # Mbps
+        upload = st.upload() / 1_000_000
+        ping = st.results.ping
+        return {
+            "ping_ms": ping,
+            "download_mbps": round(download, 2),
+            "upload_mbps": round(upload, 2)
+        }
     except Exception as e:
-        download = upload = ping_ms = 0
-    return {"ping_ms": ping_ms, "download_mbps": download, "upload_mbps": upload}
-
-@app.get("/history")
-async def history(limit: Optional[int] = 5):
-    # Implement your DB read logic here (currently dummy)
-    return {"history": []}
+        return {"error": str(e)}

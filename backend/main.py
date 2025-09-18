@@ -1,92 +1,140 @@
 # backend/main.py
-from fastapi import FastAPI, Query
+
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional
-import asyncio
-from fastapi.responses import RedirectResponse
+import subprocess
+import socket
+import speedtest
+import os
+import pickle
+import sqlite3
+from datetime import datetime
 
-app = FastAPI()
-app = FastAPI(
-    title="3xample Connectivity Analyzer",
-    description="Async API to test network connectivity: ping, DNS, traceroute, and speedtest",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+app = FastAPI(title="Connectivity Analyzer + ML API + Logging")
+
+# ----------- Paths & ML Model Loading ----------- #
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "rf_model.pkl")
+DB_PATH = os.path.join(BASE_DIR, "connectivity_logs.db")
+
+# Load ML model
+try:
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    print("ML model loaded successfully.")
+except FileNotFoundError:
+    model = None
+    print("Warning: ML model not found at", MODEL_PATH)
+
+# ----------- Database Setup ----------- #
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS connectivity_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT,
+    target TEXT,
+    output TEXT,
+    timestamp TEXT
 )
+""")
+conn.commit()
 
-# =======================
-# Pydantic Models
-# =======================
-
-class PingResult(BaseModel):
+# ----------- Request Models ----------- #
+class PingRequest(BaseModel):
     host: str
-    result: str
 
-class DNSResult(BaseModel):
-    host: str
-    ip_addresses: List[str]
+class DNSRequest(BaseModel):
+    domain: str
 
-class TracerouteResult(BaseModel):
-    host: str
-    hops: List[str]
+class PredictRequest(BaseModel):
+    features: list  # Example: [1.2, 3.4, 5.6]
 
-class SpeedTestResult(BaseModel):
-    download_mbps: float
-    upload_mbps: float
-    ping_ms: float
+# ----------- Utility: log results ----------- #
+def log_result(type_: str, target: str, output: str):
+    cursor.execute(
+        "INSERT INTO connectivity_log (type, target, output, timestamp) VALUES (?, ?, ?, ?)",
+        (type_, target, output, datetime.now().isoformat())
+    )
+    conn.commit()
 
-# =======================
-# Async Endpoint Functions (Placeholders)
-# =======================
+# ----------- Endpoints ----------- #
 
-async def run_ping(host: str) -> str:
-    # Replace with your actual ping logic
-    await asyncio.sleep(0.1)
-    return f"Ping to {host} successful"
+# ML Prediction
+@app.post("/predict")
+def predict(req: PredictRequest):
+    if model is None:
+        return {"error": "ML model not loaded."}
+    try:
+        prediction = model.predict([req.features])
+        return {"prediction": prediction.tolist()}
+    except Exception as e:
+        return {"error": str(e)}
 
-async def run_dns(host: str) -> List[str]:
-    await asyncio.sleep(0.1)
-    return ["192.168.1.1"]
+# Ping
+@app.post("/ping")
+def ping_host(req: PingRequest):
+    try:
+        result = subprocess.run(
+            ["ping", "-c", "4", req.host],
+            capture_output=True, text=True, check=True
+        )
+        output = result.stdout
+        log_result("ping", req.host, output)
+        return {"host": req.host, "output": output}
+    except subprocess.CalledProcessError as e:
+        return {"error": str(e), "details": e.stderr}
 
-async def run_traceroute(host: str) -> List[str]:
-    await asyncio.sleep(0.1)
-    return ["192.168.1.1", "10.0.0.1", host]
+# Traceroute
+@app.post("/traceroute")
+def traceroute(req: PingRequest):
+    try:
+        result = subprocess.run(
+            ["traceroute", req.host],
+            capture_output=True, text=True, check=True
+        )
+        output = result.stdout
+        log_result("traceroute", req.host, output)
+        return {"host": req.host, "output": output}
+    except subprocess.CalledProcessError as e:
+        return {"error": str(e), "details": e.stderr}
 
-async def run_speedtest() -> dict:
-    await asyncio.sleep(0.1)
-    return {"download_mbps": 100.5, "upload_mbps": 50.2, "ping_ms": 15.3}
+# DNS Lookup
+@app.post("/dns")
+def dns_lookup(req: DNSRequest):
+    try:
+        ip = socket.gethostbyname(req.domain)
+        log_result("dns", req.domain, ip)
+        return {"domain": req.domain, "ip": ip}
+    except socket.gaierror:
+        return {"error": f"Unable to resolve {req.domain}"}
 
-# =======================
-# API Endpoints
-# =======================
+# Speedtest
+@app.get("/speedtest")
+def run_speedtest():
+    try:
+        st = speedtest.Speedtest()
+        st.get_best_server()
+        download = st.download() / 1_000_000  # Mbps
+        upload = st.upload() / 1_000_000
+        ping_val = st.results.ping
+        output = f"Ping: {ping_val}ms, Download: {download:.2f}Mbps, Upload: {upload:.2f}Mbps"
+        log_result("speedtest", "self", output)
+        return {
+            "ping_ms": ping_val,
+            "download_mbps": round(download, 2),
+            "upload_mbps": round(upload, 2)
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
-
-
-@app.get("/")
-async def redirect_to_docs():
-    return RedirectResponse(url="/docs")
-
-@app.get("/ping", response_model=PingResult, summary="Ping a host", description="Returns ping result for a given host")
-async def ping(host: str = Query(..., description="Hostname or IP to ping")):
-    result = await run_ping(host)
-    return PingResult(host=host, result=result)
-
-@app.get("/dns", response_model=DNSResult, summary="Resolve DNS for a host", description="Returns IP addresses for the given host")
-async def dns(host: str = Query(..., description="Hostname to resolve")):
-    ips = await run_dns(host)
-    return DNSResult(host=host, ip_addresses=ips)
-
-@app.get("/traceroute", response_model=TracerouteResult, summary="Traceroute to a host", description="Returns list of hops to reach the host")
-async def traceroute(host: str = Query(..., description="Hostname or IP to trace")):
-    hops = await run_traceroute(host)
-    return TracerouteResult(host=host, hops=hops)
-
-@app.get("/speedtest", response_model=SpeedTestResult, summary="Run internet speed test", description="Returns download, upload speed and ping")
-async def speedtest():
-    result = await run_speedtest()
-    return SpeedTestResult(**result)
-
-# =======================
-# To run locally:
-# uvicorn backend.main:app --reload
-# =======================
+# Retrieve history
+@app.get("/history")
+def get_history(limit: int = 10):
+    cursor.execute(
+        "SELECT type, target, output, timestamp FROM connectivity_log ORDER BY id DESC LIMIT ?",
+        (limit,)
+    )
+    rows = cursor.fetchall()
+    history = [{"type": t, "target": tgt, "output": out, "timestamp": ts} for t, tgt, out, ts in rows]
+    return {"history": history}
